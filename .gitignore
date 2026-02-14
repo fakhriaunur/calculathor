@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Bun
+bun.lockb
+.bun/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Claude / AI-specific
+.claude/sessions/
+.claude/memory.db
+.claude-flow/.trend-cache.json
+.claude-flow/daemon-state.json
+.claude-flow/daemon.pid
+.claude-flow/metrics/
+.claude-flow/data/
+.swarm/
+
+# Archive (keep for reference but don't track changes)
+# archive/
+
+# Compiled binaries
+calculathor
+*.exe
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Socket files
+*.sock
