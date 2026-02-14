@@ -1,17 +1,51 @@
 {
   "name": "calculathor",
   "version": "0.1.0",
-  "description": "Calculator with expression parser - Phase 2",
+  "description": "A powerful yet lightweight calculator with expression parser",
   "main": "src/index.ts",
   "type": "module",
+  "bin": {
+    "calculathor": "./src/cli/index.ts",
+    "calc": "./src/cli/index.ts"
+  },
   "scripts": {
-    "cli": "bun src/cli.ts",
+    "cli": "bun src/cli/index.ts",
+    "tui": "bun src/tui/index.tsx",
+    "daemon": "bun src/daemon/index.ts",
     "test": "bun test",
-    "build": "tsc",
-    "lint": "tsc --noEmit"
+    "test:core": "bun test tests/core/unit",
+    "test:transport": "bun test tests/transport",
+    "test:persistence": "bun test tests/persistence",
+    "test:e2e": "bun test tests/e2e",
+    "test:coverage": "bun test --coverage",
+    "build": "bun build --compile --outfile calculathor src/cli/index.ts",
+    "build:all": "bun build --compile --outfile calculathor src/cli/index.ts && bun build --compile --outfile calculathor-daemon src/daemon/index.ts",
+    "lint": "tsc --noEmit",
+    "dev:daemon": "bun --watch src/daemon/index.ts",
+    "dev:tui": "bun --watch src/tui/index.tsx",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "ink": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/react": "^18.2.0",
+    "prettier": "^3.0.0",
     "typescript": "^5.0.0"
-  }
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "keywords": [
+    "calculator",
+    "expression-parser",
+    "math",
+    "cli",
+    "tui"
+  ],
+  "license": "MIT"
 }
