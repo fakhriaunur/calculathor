@@ -1,5 +1,5 @@
 // Expression Evaluator - Functional Core
-import type { ASTNode, SourcePosition } from '../parser/pratt.js';
+import type { ASTNode, SourcePosition } from '../parser/pratt';
 export type { ASTNode, SourcePosition };
 
 export interface FunctionDef {
