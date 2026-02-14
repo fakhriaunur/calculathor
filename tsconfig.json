@@ -10,7 +10,8 @@
     "declaration": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "types": ["bun-types"]
+    "types": ["bun-types", "react"],
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

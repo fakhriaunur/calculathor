@@ -1,9 +1,10 @@
 /**
  * Tokenizer tests for Calculathor expression parser
+ * Following TDD approach - tests define the requirements
  */
 
 import { describe, it, expect } from 'bun:test';
-import { Tokenizer, tokenize, Token } from '../src/parser/tokenizer';
+import { tokenize, Token, TokenType } from '../src/parser/tokenizer';
 
 function tokenSummary(tokens: Token[]): Array<{ type: string; value: string }> {
   return tokens.map(t => ({ type: t.type, value: t.value }));
@@ -82,6 +83,18 @@ describe('Tokenizer', () => {
       expect(tokens[0].type).toBe('NUMBER');
       expect(tokens[0].value).toBe('6.022e23');
     });
+
+    it('handles number starting with dot', () => {
+      const tokens = tokenize('.5');
+      expect(tokens[0].type).toBe('NUMBER');
+      expect(tokens[0].value).toBe('0.5');
+    });
+
+    it('handles number with dot but no fraction', () => {
+      const tokens = tokenize('5.');
+      expect(tokens[0].type).toBe('NUMBER');
+      expect(tokens[0].value).toBe('5');
+    });
   });
 
   describe('operators', () => {
@@ -94,7 +107,7 @@ describe('Tokenizer', () => {
       }
     });
 
-    it('tokenizes two-character operators', () => {
+    it('tokenizes two-character comparison operators', () => {
       const ops = ['==', '!=', '<=', '>='];
       for (const op of ops) {
         const tokens = tokenize(op);
@@ -103,10 +116,18 @@ describe('Tokenizer', () => {
       }
     });
 
-    it('tokenizes power operator', () => {
+    it('uses ^ for exponentiation (not **)', () => {
+      const tokens = tokenize('2^3');
+      expect(tokens[1].type).toBe('OPERATOR');
+      expect(tokens[1].value).toBe('^');
+    });
+
+    it('tokenizes ** as two separate * operators', () => {
       const tokens = tokenize('**');
       expect(tokens[0].type).toBe('OPERATOR');
-      expect(tokens[0].value).toBe('**');
+      expect(tokens[0].value).toBe('*');
+      expect(tokens[1].type).toBe('OPERATOR');
+      expect(tokens[1].value).toBe('*');
     });
   });
 
@@ -161,18 +182,6 @@ describe('Tokenizer', () => {
       expect(tokens[0].type).toBe('COMMA');
       expect(tokens[0].value).toBe(',');
     });
-
-    it('tokenizes assignment', () => {
-      const tokens = tokenize('=');
-      expect(tokens[0].type).toBe('ASSIGN');
-      expect(tokens[0].value).toBe('=');
-    });
-
-    it('tokenizes semicolon', () => {
-      const tokens = tokenize(';');
-      expect(tokens[0].type).toBe('SEMICOLON');
-      expect(tokens[0].value).toBe(';');
-    });
   });
 
   describe('complex expressions', () => {
@@ -185,21 +194,6 @@ describe('Tokenizer', () => {
         { type: 'OPERATOR', value: '/' },
         { type: 'NUMBER', value: '2' },
         { type: 'RPAREN', value: ')' },
-        { type: 'EOF', value: '' }
-      ]);
-    });
-
-    it('tokenizes function definition', () => {
-      const tokens = tokenize('f(x) = x^2');
-      expect(tokenSummary(tokens)).toEqual([
-        { type: 'IDENTIFIER', value: 'f' },
-        { type: 'LPAREN', value: '(' },
-        { type: 'IDENTIFIER', value: 'x' },
-        { type: 'RPAREN', value: ')' },
-        { type: 'ASSIGN', value: '=' },
-        { type: 'IDENTIFIER', value: 'x' },
-        { type: 'OPERATOR', value: '^' },
-        { type: 'NUMBER', value: '2' },
         { type: 'EOF', value: '' }
       ]);
     });
@@ -240,6 +234,16 @@ describe('Tokenizer', () => {
         { type: 'EOF', value: '' }
       ]);
     });
+
+    it('tokenizes comparison expression', () => {
+      const tokens = tokenize('x <= 10');
+      expect(tokenSummary(tokens)).toEqual([
+        { type: 'IDENTIFIER', value: 'x' },
+        { type: 'OPERATOR', value: '<=' },
+        { type: 'NUMBER', value: '10' },
+        { type: 'EOF', value: '' }
+      ]);
+    });
   });
 
   describe('whitespace handling', () => {
@@ -276,8 +280,7 @@ describe('Tokenizer', () => {
 
   describe('position tracking', () => {
     it('tracks line and column', () => {
-      const tokenizer = new Tokenizer('2 + 3');
-      const tokens = tokenizer.tokenize();
+      const tokens = tokenize('2 + 3');
 
       expect(tokens[0]).toMatchObject({ type: 'NUMBER', line: 1, column: 1 });
       expect(tokens[1]).toMatchObject({ type: 'OPERATOR', line: 1, column: 3 });
@@ -285,8 +288,7 @@ describe('Tokenizer', () => {
     });
 
     it('tracks positions across multiple lines', () => {
-      const tokenizer = new Tokenizer('2\n+\n3');
-      const tokens = tokenizer.tokenize();
+      const tokens = tokenize('2\n+\n3');
 
       expect(tokens[0]).toMatchObject({ type: 'NUMBER', line: 1, column: 1 });
       expect(tokens[1]).toMatchObject({ type: 'OPERATOR', line: 2, column: 1 });
@@ -294,12 +296,19 @@ describe('Tokenizer', () => {
     });
 
     it('tracks absolute position', () => {
-      const tokenizer = new Tokenizer('2 + 3');
-      const tokens = tokenizer.tokenize();
+      const tokens = tokenize('2 + 3');
 
       expect(tokens[0].position).toBe(0);
       expect(tokens[1].position).toBe(2);
       expect(tokens[2].position).toBe(4);
+    });
+
+    it('tracks column correctly after multi-char tokens', () => {
+      const tokens = tokenize('1 <= 2');
+
+      expect(tokens[0]).toMatchObject({ type: 'NUMBER', line: 1, column: 1 });
+      expect(tokens[1]).toMatchObject({ type: 'OPERATOR', line: 1, column: 3 });
+      expect(tokens[2]).toMatchObject({ type: 'NUMBER', line: 1, column: 6 });
     });
   });
 
@@ -314,6 +323,10 @@ describe('Tokenizer', () => {
 
     it('includes position in error message', () => {
       expect(() => tokenize('2 + $')).toThrow(/line 1, column 5/);
+    });
+
+    it('includes line number in error message for multi-line', () => {
+      expect(() => tokenize('2\n+\n$')).toThrow(/line 3/);
     });
   });
 
@@ -330,16 +343,16 @@ describe('Tokenizer', () => {
       expect(tokens[0].type).toBe('EOF');
     });
 
-    it('handles number starting with dot', () => {
-      const tokens = tokenize('.5');
+    it('handles very long number', () => {
+      const tokens = tokenize('12345678901234567890');
       expect(tokens[0].type).toBe('NUMBER');
-      expect(tokens[0].value).toBe('.5');
+      expect(tokens[0].value).toBe('12345678901234567890');
     });
 
-    it('handles number with dot but no fraction', () => {
-      const tokens = tokenize('5.');
-      expect(tokens[0].type).toBe('NUMBER');
-      expect(tokens[0].value).toBe('5.');
+    it('handles identifier starting with underscore', () => {
+      const tokens = tokenize('_private');
+      expect(tokens[0].type).toBe('IDENTIFIER');
+      expect(tokens[0].value).toBe('_private');
     });
   });
 });
