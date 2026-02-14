@@ -1,0 +1,17 @@
+{
+  "name": "calculathor",
+  "version": "0.1.0",
+  "description": "Calculator with expression parser - Phase 2",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "cli": "bun src/cli.ts",
+    "test": "bun test",
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}
