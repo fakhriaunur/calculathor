@@ -1083,6 +1083,27 @@ function progressBar(current, total) {
   return '[' + '\u25CF'.repeat(filled) + '\u25CB'.repeat(empty) + ']';
 }
 
+// Get Calculathor-specific status if in calculathor project
+function getCalculathorStatus() {
+  const projectName = path.basename(process.cwd());
+  if (projectName !== 'calculathor') return null;
+
+  // Check for calculathor statusline helper
+  const calcStatusPath = path.join(process.cwd(), '.claude', 'helpers', 'calculathor-statusline.cjs');
+  if (!fs.existsSync(calcStatusPath)) return null;
+
+  try {
+    // Execute the calculathor-specific statusline
+    const output = execSync(`node ${calcStatusPath} --json`, {
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
+    return JSON.parse(output);
+  } catch (e) {
+    return null;
+  }
+}
+
 // Generate full statusline
 function generateStatusline() {
   const user = getUserInfo();
@@ -1097,6 +1118,7 @@ function generateStatusline() {
   const git = getGitStatus();
   const session = getSessionStats();
   const integration = getIntegrationStatus();
+  const calcStatus = getCalculathorStatus();
   const lines = [];
 
   // Calculate intelligence trend
@@ -1136,6 +1158,34 @@ function generateStatusline() {
     header += `  ${c.dim}│${c.reset}  ${c.cyan}⏱ ${session.duration}${c.reset}`;
   }
   lines.push(header);
+
+  // Calculathor-specific section (if in calculathor project)
+  if (calcStatus) {
+    lines.push(`${c.dim}─────────────────────────────────────────────────────${c.reset}`);
+    lines.push(`${c.brightPurple}▊ Calculathor Project${c.reset}`);
+
+    // DDD Bounded Contexts (3 contexts) - numbers only
+    const dddCompleted = calcStatus.ddd?.completed || 0;
+    const dddTotal = 3;
+    const dddColor = dddCompleted === dddTotal ? c.brightGreen : dddCompleted > 0 ? c.yellow : c.red;
+    let dddLine = `${c.brightCyan}  DDD Contexts${c.reset}  ${dddColor}${dddCompleted}/${dddTotal}${c.reset}`;
+    lines.push(dddLine);
+
+    // ADRs - numbers only
+    const adrCompleted = calcStatus.adrs?.completed || 0;
+    const adrTotal = calcStatus.adrs?.total || 6;
+    const adrColor = adrCompleted === adrTotal ? c.brightGreen : adrCompleted > 0 ? c.yellow : c.red;
+    let adrLine = `${c.brightYellow}  ADRs${c.reset}         ${adrColor}${adrCompleted}/${adrTotal}${c.reset}`;
+    lines.push(adrLine);
+
+    // Tracer Bullets - numbers only
+    const tracerCompleted = calcStatus.tracer?.completed || 0;
+    const tracerTotal = calcStatus.tracer?.total || 4;
+    const tracerColor = tracerCompleted === tracerTotal ? c.brightGreen : c.yellow;
+    lines.push(
+      `${c.brightCyan}  Tracers${c.reset}      ${tracerColor}${tracerCompleted}/${tracerTotal}${c.reset}`
+    );
+  }
 
   // Separator
   lines.push(`${c.dim}─────────────────────────────────────────────────────${c.reset}`);
